@@ -1,0 +1,99 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 16.01.2025 06:56:18
+// Design Name: 
+// Module Name: wallet_discovery_tb
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+`timescale 1ns / 1ps
+
+module wallet_discovery_tb;
+
+    // Parameters
+    parameter NUM_PIPELINES = 4;
+    parameter KEY_WIDTH = 256;
+    parameter HASH_WIDTH = 256;
+
+    // Testbench Signals
+    reg clk;
+    reg reset;
+    reg [HASH_WIDTH-1:0] vanity_pattern;
+    wire match_found;
+    wire [KEY_WIDTH-1:0] matching_private_key;
+
+    // DUT Instance
+    wallet_discovery dut (
+        .clk(clk),
+        .reset(reset),
+        .vanity_pattern(vanity_pattern),
+        .match_found(match_found),
+        .matching_private_key(matching_private_key)
+    );
+
+    // Clock Generation
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk; // 10ns clock period
+    end
+
+    // Test Sequence
+    initial begin
+        // File to log the results
+        $dumpfile("wallet_discovery_tb.vcd");
+        $dumpvars(0, wallet_discovery_tb);
+
+        // Reset and Initialization
+        reset = 1;
+        vanity_pattern = 256'hCAFEBABECAFEBABECAFEBABECAFEBABE; // Desired pattern
+        #20;
+
+        reset = 0;
+        #1000; // Run simulation for a while to check behavior
+
+        // Check for matches
+        if (match_found) begin
+            $display("Match found! Private Key: %h", matching_private_key);
+        end else begin
+            $display("No match found in the simulation window.");
+        end
+
+        #500; // Additional simulation time
+        $finish;
+    end
+
+    // Edge Case Testing
+    initial begin
+        // Wait for reset deassertion
+        @(negedge reset);
+
+        // Case 1: Change pattern mid-simulation
+        #200;
+        vanity_pattern = 256'hDEADBEEFDEADBEEFDEADBEEFDEADBEEF;
+        #300;
+
+        // Case 2: Extremely low private key range
+        #100;
+        reset = 1;
+        #20;
+        reset = 0;
+        vanity_pattern = 256'h00000000000000000000000000000000;
+
+        #1000;
+        $display("End of edge case testing.");
+    end
+
+endmodule
+
